@@ -13,7 +13,7 @@ env:
   ECR_REPOSITORY: oidc-test
 jobs:
   build-and-push:
-    runs-on: ubuntu-latets
+    runs-on: ubuntu-latest
 
     steps:
       - name: checkout code 
