@@ -1,0 +1,44 @@
+name: Github actions oidc
+on: push:
+  branches: 
+    - main
+
+permission:
+  id-token: write
+  contents: read
+
+env: 
+   AWS_REGION: us-east-1
+   ECR_REPOSITORY: oidc-test
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latets
+
+    steps:
+      - name: checkout code 
+        uses: actions/checkout@v4 
+
+      - name: Set image tag  
+        id: tag
+        RUN: echo "image_tag=sha-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4 
+        with:
+           role-to-assume: arn:aws:iam::004246189893:role/oidc-ecr-role
+           aws-region: ${{ env.AWS_REGION }}
+  
+      - name: Login to ECR 
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2 
+
+      - name: Build Docker image 
+        run: |
+           IMAGE="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.tag.outputs.image_tag }}
+           docker build -t $IMAGE .
+
+      - name: push image to ECR 
+        id: push 
+        run: |
+            docker push $IMAGE
+            echo "pushed image : $IMAGE"
